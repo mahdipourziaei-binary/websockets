@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 
-  
-  
+
+
 
   <head>
     <style id="antiClickjack">body{display:none !important;}</style>
@@ -61,7 +61,7 @@
 
     <div id="content">
 
-        
+
 
 
 <select id="mobile-page-selector">
@@ -88,17 +88,17 @@
         <li><a href="/">Welcome</a></li>
         <li><a href="/websockets/">Quickstart</a></li>
         <li><a href="/demos/">Code samples</a></li>
-        <li><a href="/applications/">App registration</a></li>
-        <li><a href="/api/">API playground</a></li>
+        <li><a href="/applications">App registration</a></li>
+        <li><a href="/api">API playground</a></li>
         <li><a href="/guide/">API guide</a></li>
         <li><a href="/faq/">FAQ</a></li>
-        <li><a href="/copytrading/">Copy trading facilities</a></li>
+        <li><a href="/copytrading">Copy trading facilities</a></li>
         <li><a href="/server-status-updates/">Server status updates</a></li>
         <li><a href="https://binary.vanillacommunity.com" target=_blank>Dev forum</a></li>
         <li><a href="/schemas/">JSON Schemas</a></li>
         <li><a href="/open-source/">Open source</a></li>
         <li><a href="/security/">Security</a></li>
-        <li><a href="/careers/">Careers</a></li>
+        <li><a href="/careers">Careers</a></li>
     </ul>
 </div>
 
@@ -175,16 +175,16 @@ namespace BinaryWSDemo
     {
     	private ClientWebSocket ws = new ClientWebSocket();
         private Uri uri = new Uri("wss://ws.binaryws.com/websockets/v3?app_id=1089");
-            
+
         public async Task SendRequest(string data)
         {
-        	
+
         	while(this.ws.State == WebSocketState.Connecting){};
             if (this.ws.State != WebSocketState.Open)
             {
                 throw new Exception("Connection is not open.");
             }
-            
+
             var reqAsBytes = Encoding.UTF8.GetBytes(data);
             var ticksRequest = new ArraySegment&ltbyte>(reqAsBytes);
 
@@ -192,14 +192,14 @@ namespace BinaryWSDemo
                 WebSocketMessageType.Text,
                 true,
                 CancellationToken.None);
-            
+
             Console.WriteLine("The request has been sent: ");
             Console.WriteLine(data);
             Console.WriteLine("\r\n \r\n");
 
-            
+
         }
-        
+
         public async Task StartListen(){
         	WebSocketReceiveResult result;
         	while (this.ws.State == WebSocketState.Open){
@@ -224,29 +224,29 @@ namespace BinaryWSDemo
                     } while (!result.EndOfMessage);
         	}
         }
-        
+
         public async Task Connect(){
         	Console.WriteLine("Prepare to connect to: " + this.uri.ToString());
         	Console.WriteLine("\r\n");
-        	
+
         	ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
         	await ws.ConnectAsync(uri, CancellationToken.None);
-        	
+
         	Console.WriteLine("The connection is established!");
         	Console.WriteLine("\r\n");
         }
 
         static void Main(string[] args)
         {
-            
+
 			string data = "{\"ticks\":\"R_100\"}";
-            
+
 			var bws = new BinaryWS();
 			bws.Connect().Wait();
-			
+
 			bws.SendRequest(data).Wait();
 			bws.StartListen();
-            
+
             Console.ReadLine();
         }
     }
@@ -372,25 +372,28 @@ EM.run {
     end
 }
 </pre>
-    <pre data-language="rust">extern crate websocket;    // websocket = "~0.12.2"
+    <pre data-language="rust">extern crate env_logger;
+extern crate ws;
 
-use std::string::String;
-use websocket::client::request::Url;
-use websocket::{Client, Message, Sender, Receiver};
+use ws::{connect, CloseCode};
 
 fn main() {
-    let url = Url::parse("wss://ws.binaryws.com/websockets/v3?app_id=1089").unwrap();
-    let request = Client::connect(url).unwrap();
-    let response = request.send().unwrap();
-    let (mut sender, mut receiver) = response.begin().split();
-    let req = Message::Text(String::from("{\"ticks\": \"R_100\"}"));
-    sender.send_message(req).unwrap();
-    for message in receiver.incoming_messages::&lt;Message&gt;() {
-        match message {
-            Ok(Message::Text(m))    => { println!("tick update: {:?}", m) },
-            _                       => { break },
-        };
-    }
+    env_logger::init();
+    println!("Starting connection");
+    connect(
+        "wss://frontend.binaryws.com/websockets/v3?app_id=1089",
+        |out| {
+            println!("Connection established");
+            out.send("{\"ticks\": \"R_100\"}").unwrap();
+
+            move |msg| {
+                println!("Got message: {}", msg);
+                out.close(CloseCode::Normal)
+            }
+        },
+    )
+    .unwrap();
+    println!("Event loop ended");
 }
 </pre>
     <pre data-language="python">import websocket
